@@ -1,7 +1,7 @@
-const items = document.querySelector(".list-items");
-const submitFormButton = document.querySelector(".submitBtn");
-const inputField = document.getElementById("input-value");
-const clearButton = document.querySelector(".clearBtn");
+const items = document.querySelector(".grocery-list");
+const submitFormButton = document.getElementById("input-item");
+const inputField = document.getElementById("enter-item");
+const clearButton = document.querySelector(".displayItems-clear");
 const feedback = document.querySelector(".feedback");
 
 Storage.prototype.setObj = function (key, obj) {
@@ -41,16 +41,22 @@ const clearAll = () => {
 // // get the event that triggered the action and go high-up the hierachy
 const deleteEntry = event => {
     let entry = event.target.parentNode.parentNode;
-    entry.remove();
+    console.log(entry.id);
+    if (entry.id) {
+        entry.remove();
     delete groceryList[entry.id];
     localStorage.setObj("groceryItems", groceryList);
+    }
+    // entry.remove();
+    // delete groceryList[entry.id];
+    // localStorage.setObj("groceryItems", groceryList);
 };
 
 
 
 // loop through the keys of the groceryList object and wire up event listeners for their div entries
 for (let e of Object.keys(groceryList)) {
-    const deleteBtn = document.getElementById(e).querySelector(".remove-icon");
+    const deleteBtn = document.getElementById(e).querySelector(".grocery-item__link");
     deleteBtn.addEventListener("click", deleteEntry);
 };
 
@@ -61,13 +67,15 @@ const addItem = () => {
     // add a check to see if the element is already in the array
     if (newEntry) {
         let itemId = `item${counter}`;
-        let newItem = `<div id=${itemId} class="item my-3 d-flex justify-content-between p-2">
-       <h5 class="item-title text-capitalize">${newEntry}</h5>
-       <span class="remove-icon text-danger"><i class="fas fa-trash"></i></span>
-      </div>`
+        let newItem = `<div id=${itemId} class="grocery-item">
+                <h4 class="grocery-item__title">${newEntry}</h4>
+                <a href="#" class="grocery-item__link">
+                    <i class="far fa-trash-alt"></i>
+                </a>
+        </div>`;
         // increment counter, add the new id to the groceryList object, add the on state to the state object
         // reset the input filed value
-        counter++
+        counter++;
         groceryList[itemId] = newItem;
         inputField.value = "";
         // add the items to the local storage
@@ -76,16 +84,15 @@ const addItem = () => {
         // add the new html to the DOM 
         items.insertAdjacentHTML("beforebegin", newItem);
         // get the new buttons from the newly inserted html and wire up the event listeners
-        const deleteBtn = document.getElementById(itemId).querySelector(".remove-icon");
-        console.log(deleteBtn);
+        const deleteBtn = document.getElementById(itemId).querySelector(".grocery-item__link");
         deleteBtn.addEventListener("click", deleteEntry);
         feedback.innerHTML = "Item was successfully added to the list"
         setTimeout(() => {
             feedback.style.display = "none";
-            feedback.classList.remove("showItem", "alert-success", "text-capitalize");
+            feedback.classList.remove("success", "alert");
         }, 3500);
         feedback.style.display = "block";
-        feedback.classList.add("showItem", "alert-success", "text-capitalize");
+        feedback.classList.add("success", "alert");
 
     } else {
         feedback.innerHTML = "Please add an item to your list!"
@@ -102,7 +109,7 @@ const addItem = () => {
 const testSubmit = event => {
     event.preventDefault();
     addItem();
-}
+};
 
 
 submitFormButton.addEventListener("click", testSubmit);
