@@ -1,139 +1,111 @@
-//Selection items from the DOM
-//Add items container
-const addItemsAction = document.querySelector('.addItems-action');
-const input = document.querySelector('.addItems-input');
-const submit = document.querySelector('.addItems-submit');
+const items = document.querySelector(".list-items");
+const submitFormButton = document.querySelector(".submitBtn");
+const inputField = document.getElementById("input-value");
+const clearButton = document.querySelector(".clearBtn");
+const feedback = document.querySelector(".feedback");
 
-//Display items container
-const list = document.querySelector('.grocery-list');
-const displayItemsAction = document.querySelector('.displayItems-action');
-const clear = document.querySelector('.displayItems-clear');
+Storage.prototype.setObj = function (key, obj) {
+    return this.setItem(key, JSON.stringify(obj))
+}
+Storage.prototype.getObj = function (key) {
+    return JSON.parse(this.getItem(key))
+}
 
-//Add event listeners
-//Submit listener
-submit.addEventListener('click', addItem);
-//Check for local storage
-document.addEventListener('DOMContentLoaded', displayStorage);
-//Clear list
-clear.addEventListener('click', removeItems);
-//Listen to list to delete individual items
-list.addEventListener('click', removeSingleItem);
+let groceryList;
+let state;
+
+// // add items from the localStorage to the groceryItems array
+localStorage.getObj("groceryItems") ? groceryList = localStorage.getObj("groceryItems") : groceryList = {};
+localStorage.getObj("counter") ? counter = localStorage.getObj("counter") : counter = 0;
+
+// add the html stored in the values of the groceryList object to the document body.
+for (let i of Object.values(groceryList)) {
+    items.insertAdjacentHTML("beforebegin", i);
+};
 
 
-//functions
-function addItem(event){
+
+// // clear the local storage, loop through all the keys in the groceryList == the div ids
+// // get the elements and delete them
+// // set the groceryList back to an empty object
+
+const clearAll = () => {
+    localStorage.clear();
+    for (let i of Object.keys(groceryList)) {
+        document.getElementById(i).remove();
+    };
+    groceryList = {};
+};
+
+
+// // get the event that triggered the action and go high-up the hierachy
+const deleteEntry = event => {
+    let entry = event.target.parentNode.parentNode;
+    entry.remove();
+    delete groceryList[entry.id];
+    localStorage.setObj("groceryItems", groceryList);
+};
+
+
+
+// loop through the keys of the groceryList object and wire up event listeners for their div entries
+for (let e of Object.keys(groceryList)) {
+    const deleteBtn = document.getElementById(e).querySelector(".remove-icon");
+    deleteBtn.addEventListener("click", deleteEntry);
+};
+
+
+const addItem = () => {
+    let newEntry = inputField.value;
+    // check if new entry is not empty
+    // add a check to see if the element is already in the array
+    if (newEntry) {
+        let itemId = `item${counter}`;
+        let newItem = `<div id=${itemId} class="item my-3 d-flex justify-content-between p-2">
+       <h5 class="item-title text-capitalize">${newEntry}</h5>
+       <span class="remove-icon text-danger"><i class="fas fa-trash"></i></span>
+      </div>`
+        // increment counter, add the new id to the groceryList object, add the on state to the state object
+        // reset the input filed value
+        counter++
+        groceryList[itemId] = newItem;
+        inputField.value = "";
+        // add the items to the local storage
+        localStorage.setObj("groceryItems", groceryList);
+        localStorage.setObj("counter", counter);
+        // add the new html to the DOM 
+        items.insertAdjacentHTML("beforebegin", newItem);
+        // get the new buttons from the newly inserted html and wire up the event listeners
+        const deleteBtn = document.getElementById(itemId).querySelector(".remove-icon");
+        console.log(deleteBtn);
+        deleteBtn.addEventListener("click", deleteEntry);
+        feedback.innerHTML = "Item was successfully added to the list"
+        setTimeout(() => {
+            feedback.style.display = "none";
+            feedback.classList.remove("showItem", "alert-success", "text-capitalize");
+        }, 3500);
+        feedback.style.display = "block";
+        feedback.classList.add("showItem", "alert-success", "text-capitalize");
+
+    } else {
+        feedback.innerHTML = "Please add an item to your list!"
+        setTimeout(() => {
+            feedback.style.display = "none";
+            feedback.classList.remove("showItem", "alert-danger", "text-capitalize");
+        }, 3500);
+        feedback.style.display = "block";
+        feedback.classList.add("showItem", "alert-danger", "text-capitalize");
+    };
+};
+
+
+const testSubmit = event => {
     event.preventDefault();
-    let value = input.value;
-    if (value === ''){
-        showAction(addItemsAction, 'Please add grocery item', false);
-    } else {
-        showAction(addItemsAction, `${value} added to the list`, true);
-        createItem(value);
-        updateStorage(value);
-    }
+    addItem();
 }
 
-function showAction(element, text, value){
-    if (value === true){
-        element.classList.add('success');
-        element.innerText = text;
-        input.value = '';
-        setTimeout(function(){
-            element.classList.remove('success');
-        }, 3000)
-    } else {
-        element.classList.add('alert');
-        element.innerText = text;
-        input.value = '';
-        setTimeout(function(){
-            element.classList.remove('alert');
-        }, 3000)
-    }
-}
 
-// create item
-function createItem(value){
-    let parent = document.createElement('div');
-        parent.classList.add('grocery-item');
+submitFormButton.addEventListener("click", testSubmit);
+clearButton.addEventListener("click", clearAll);
 
-    // let title = document.createElement('h4');
-    //     title.classList.add('grocery-item__title');
 
-    parent.innerHTML = `<h4 class="grocery-item__title">${value}</h4>
-    <a href="#" class="grocery-item__link">
-        <i class="far fa-trash-alt"></i>
-    </a>`
-
-    list.appendChild(parent);
-}
-
-//update storage
-function updateStorage(value){
-    let groceryList;
-    
-    groceryList = localStorage.getItem('groceryList') ? JSON.parse(localStorage.getItem('groceryList')) : [];
-
-    groceryList.push(value);
-    localStorage.setItem('groceryList', JSON.stringify(groceryList));
-}
-
-//display items in local storage
-function displayStorage(){
-    let exists = localStorage.getItem('groceryList');
-    
-    if(exists){
-        let storageItems = JSON.parse(localStorage.getItem('groceryList'));
-        storageItems.forEach(function(element){
-            createItem(element);
-        })
-    }
-}
-
-//remove all items
-function removeItems(){
-    //delete from local storage
-    localStorage.removeItem('groceryList');
-    let items = document.querySelectorAll('.grocery-item');
-    
-    if(items.length > 0){
-        //remove each item from the list
-        showAction(displayItemsAction, 'All items deleted', false);
-        items.forEach(function(element){
-            list.removeChild(element);
-        })
-    } else {
-        showAction(displayItemsAction, 'No more items to delete', false);
-    }
-}
-
-//remove single item
-
-function removeSingleItem(event){
-    event.preventDefault();
-    
-    let link = event.target.parentElement;
-    if(link.classList.contains('grocery-item__link')){
-        let text = link.previousElementSibling.innerHTML;
-        let groceryItem = event.target.parentElement.parentElement;
-        //remove from list
-
-        list.removeChild(groceryItem);
-        showAction(displayItemsAction,`${text} removed from the list`, true);
-
-        //remove from local storage
-        editStorage(text);
-
-    }
-}
-
-function editStorage(item){
-    let groceryItems = JSON.parse(localStorage.getItem('groceryList'));
-    let index = groceryItems.indexOf(item);
-    
-    groceryItems.splice(index, 1);
-    //first delete existing list
-    localStorage.removeItem('groceryList');
-    //add new updated/edited list
-    localStorage.setItem('groceryList', JSON.stringify(groceryItems));
-
-}
